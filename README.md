@@ -29,6 +29,7 @@ This is an admittedly clunky solution but it bridges that gap: export your due c
 ## Scripts
 
 | Script | Description |
+| --- | --- |
 | `export_daily_cards.py` | reads the live Anki database (`ANKI_DB_PATH`) and outputs a due cards txt file |
 | `submit_ratings.py` | reads `ratings_inbox/ratings.jsonl` and writes ratings directly to the Anki database |
 
