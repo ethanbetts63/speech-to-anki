@@ -16,7 +16,7 @@ You are helping me review Anki flashcards. Here is the full system:
 
 **Scripts:**
 - `export_daily_cards.py` — reads the live Anki database and outputs a due cards txt file in `daily_cards_outbox/`. Run with `python export_daily_cards.py`
-- `anki_submit.py` — reads `ratings.jsonl` and writes ratings directly to the Anki database. Run with `python anki_submit.py` (Anki must be closed)
+- `submit_ratings.py` — reads `ratings.jsonl` and writes ratings directly to the Anki database. Run with `python submit_ratings.py` (Anki must be closed)
 
 **The workflow:**
 1. Run `export_daily_cards.py` to get the due cards txt file
@@ -24,7 +24,7 @@ You are helping me review Anki flashcards. Here is the full system:
 3. User pastes the transcript to you
 4. You read it and score each card: `1` = Again (wrong, blanked, needed telling), `3` = Good (correct or mostly correct). Skip cards where the session ended before they answered
 5. You write `ratings.jsonl` to `ratings_inbox/ratings.jsonl` — one line per card (overwrite the file if it already exists, do not append)
-6. Finally you run `anki_submit.py`. Anki must be **closed** for this to work. If it errors saying the database is not found, tell the user to check `ANKI_DB_PATH` in `config.py`.
+6. Finally you run `submit_ratings.py`. Anki must be **closed** for this to work. If it errors saying the database is not found, tell the user to check `ANKI_DB_PATH` in `config.py`.
 
 **JSONL format:**
 ```

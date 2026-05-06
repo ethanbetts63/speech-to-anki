@@ -3,8 +3,8 @@ Reads ratings.jsonl and submits each card rating directly to the Anki SQLite dat
 Anki MUST be closed when running this script.
 
 Usage:
-    python anki_submit.py
-    python anki_submit.py <ratings.jsonl>
+    python submit_ratings.py
+    python submit_ratings.py <ratings.jsonl>
 """
 
 import sqlite3

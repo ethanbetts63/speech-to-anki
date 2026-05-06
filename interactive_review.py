@@ -4,8 +4,8 @@ Shows each card in the terminal and accepts keyboard ratings.
 Anki must be open with the AnkiConnect add-on running.
 
 Usage:
-    python anki_review.py
-    python anki_review.py <deck name>
+    python interactive_review.py
+    python interactive_review.py <deck name>
 """
 
 import requests
@@ -47,7 +47,7 @@ def review_deck(deck_name):
     anki("guiDeckReview", name=deck_name)
 
     stats = anki("getDeckStats", decks=[deck_name])
-    s = stats[str(list(stats.keys())[0])]
+    s = next(iter(stats.values()))
     total = s["review_count"] + s["learn_count"] + s["new_count"]
     print(f"\nDeck: {deck_name}")
     print(f"Due: {s['review_count']} review, {s['learn_count']} learning, {s['new_count']} new ({total} total)")
