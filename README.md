@@ -1,6 +1,6 @@
 # speech_to_anki
 
-Imagine reviewing Anki by talking/explaining concepts out loud and getting real-time feedback on whether or not you nailed it. Instead of going outside to touch grass and make friends, I made this tool.
+Imagine reviewing Anki by talking/explaining concepts out loud and getting real-time feedback on whether or not you nailed it. Instead of going outside to touch grass and make friends, use this tool.
 
 As of writing, no CLI AI offers voice/conversational capabilities — only browser-based versions of Claude and ChatGPT do.
 
