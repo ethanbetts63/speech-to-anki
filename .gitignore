@@ -2,5 +2,4 @@ daily_cards_outbox/*
 !daily_cards_outbox/.gitkeep
 ratings_inbox/*
 !ratings_inbox/.gitkeep
-venv/
 __pycache__/
