@@ -1,0 +1,5 @@
+collection_inbox/
+daily_cards_outbox/
+ratings.jsonl
+venv/
+__pycache__/
