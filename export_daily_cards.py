@@ -4,9 +4,9 @@ daily_cards_outbox/. The output file is intended to be fed to a browser AI
 for a verbal review session. Anki must be closed when running this script.
 
 Usage:
-    python anki_due_cards.py
-    python anki_due_cards.py <deck name>
-    python anki_due_cards.py <deck name> <output.txt>
+    python export_daily_cards.py
+    python export_daily_cards.py <deck name>
+    python export_daily_cards.py <deck name> <output.txt>
 """
 
 import sqlite3
@@ -30,12 +30,11 @@ def find_deck_id(cur, deck_name):
     cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='decks'")
     if cur.fetchone():
         cur.execute("SELECT id, name FROM decks")
-        for did, name in cur.fetchall():
+        rows = cur.fetchall()
+        for did, name in rows:
             if name.lower() == deck_name.lower():
                 return did
-        cur.execute("SELECT id, name FROM decks")
-        available = [name for _, name in cur.fetchall()]
-        raise ValueError(f"Deck '{deck_name}' not found. Available: {available}")
+        raise ValueError(f"Deck '{deck_name}' not found. Available: {[n for _, n in rows]}")
     else:
         # Older Anki stores deck metadata as a JSON blob in the col table.
         cur.execute("SELECT decks FROM col")
