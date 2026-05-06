@@ -1,35 +1,25 @@
 """
-Reads ratings.jsonl and submits each card rating to Anki via AnkiConnect.
-Anki must be open with the AnkiConnect add-on running.
+Reads ratings.jsonl and submits each card rating directly to the Anki SQLite database.
+Anki MUST be closed when running this script.
 
 Usage:
     python anki_submit.py
     python anki_submit.py <ratings.jsonl>
-    python anki_submit.py <ratings.jsonl> <deck name>
 """
 
-import requests
+import sqlite3
 import json
 import sys
 import os
 import time
-from config import DECK_NAME, ANKI_URL
+from config import ANKI_DB_PATH
 
 RATINGS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ratings_inbox", "ratings.jsonl")
 
 
-def anki(action, **params):
-    payload = {"action": action, "version": 6, "params": params}
-    r = requests.post(ANKI_URL, json=payload)
-    result = r.json()
-    if result.get("error"):
-        raise RuntimeError(f"AnkiConnect error: {result['error']}")
-    return result["result"]
-
-
-def load_ratings(jsonl_path):
+def load_ratings(path):
     ratings = {}
-    with open(jsonl_path, encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -39,52 +29,86 @@ def load_ratings(jsonl_path):
     return ratings
 
 
-def submit_ratings(deck_name, jsonl_path):
+def get_today(cur):
+    cur.execute("SELECT crt, conf FROM col")
+    crt, conf_raw = cur.fetchone()
+    conf = json.loads(conf_raw) if conf_raw else {}
+    rollover = conf.get("rollover", 4)
+    local_offset = conf.get("localOffset", 0)
+    now_ts = int(time.time())
+    offset_secs = local_offset * 60
+    today = ((now_ts + offset_secs - rollover * 3600) // 86400
+           - (crt    + offset_secs - rollover * 3600) // 86400)
+    return today, now_ts
+
+
+def apply_rating(cur, card_id, ease, today, now_ts, index):
+    cur.execute("SELECT queue, ivl, factor, reps, lapses FROM cards WHERE id=?", (card_id,))
+    row = cur.fetchone()
+    if row is None:
+        print(f"  [WARN] card {card_id} not found in database")
+        return False
+
+    queue, ivl, factor, reps, lapses = row
+    labels = {1: "Again", 2: "Hard", 3: "Good", 4: "Easy"}
+
+    if ease == 3:  # Good
+        if queue == 2:
+            new_ivl = max(ivl + 1, round(ivl * factor / 1000.0))
+        else:
+            new_ivl = max(1, ivl if ivl > 0 else 1)
+        new_factor = factor
+        new_lapses = lapses
+        cur.execute(
+            "UPDATE cards SET queue=2, type=2, due=?, ivl=?, factor=?, reps=?, lapses=?, mod=?, usn=-1 WHERE id=?",
+            (today + new_ivl, new_ivl, new_factor, reps + 1, new_lapses, now_ts, card_id),
+        )
+
+    elif ease == 1:  # Again
+        new_factor = max(1300, factor - 200)
+        new_ivl = 1
+        new_lapses = lapses + 1
+        cur.execute(
+            "UPDATE cards SET due=?, ivl=?, factor=?, reps=?, lapses=?, mod=?, usn=-1 WHERE id=?",
+            (today + new_ivl, new_ivl, new_factor, reps + 1, new_lapses, now_ts, card_id),
+        )
+
+    revlog_ivl = new_ivl if ease >= 2 else -new_ivl
+    cur.execute(
+        "INSERT OR IGNORE INTO revlog (id, cid, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?,?,?,?,?,?,?,?,?)",
+        (now_ts * 1000 + index, card_id, -1, ease, revlog_ivl, ivl, factor, 1000, 1),
+    )
+
+    print(f"  [{index + 1}] card {card_id} -> {ease} ({labels.get(ease, '?')})")
+    return True
+
+
+def submit_ratings(db_path, jsonl_path):
     ratings = load_ratings(jsonl_path)
     print(f"Loaded {len(ratings)} ratings from {jsonl_path}")
 
-    anki("guiDeckReview", name=deck_name)
-    time.sleep(1)  # give Anki time to open the review screen
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+    today, now_ts = get_today(cur)
 
-    submitted = 0
-    remaining = set(ratings.keys())
+    succeeded = 0
+    for i, (card_id, ease) in enumerate(ratings.items()):
+        if apply_rating(cur, card_id, ease, today, now_ts, i):
+            succeeded += 1
 
-    while remaining:
-        card = anki("guiCurrentCard")
-        if card is None:
-            print("No current card — review session ended or not active.")
-            break
+    cur.execute("UPDATE col SET mod=?, usn=-1", (now_ts,))
+    conn.commit()
+    conn.close()
 
-        card_id = card.get("cardId")
-        anki("guiShowAnswer")
-
-        if card_id in remaining:
-            ease = ratings[card_id]
-            labels = {1: "Again", 2: "Hard", 3: "Good", 4: "Easy"}
-            anki("guiAnswerCard", ease=ease)
-            print(f"  card {card_id} -> {ease} ({labels.get(ease, '?')})")
-            remaining.discard(card_id)
-            submitted += 1
-        else:
-            # Card wasn't in the transcript — mark Good and move on.
-            anki("guiAnswerCard", ease=3)
-
-        time.sleep(0.1)
-
-    print(f"\nDone. Submitted: {submitted} ratings.")
-    if remaining:
-        print(f"{len(remaining)} transcript card(s) never appeared in the queue (may already be answered).")
-    print("Any remaining due cards are still in your Anki queue.")
+    print(f"\nDone. {succeeded}/{len(ratings)} submitted.")
 
 
 if __name__ == "__main__":
     jsonl = sys.argv[1] if len(sys.argv) >= 2 else RATINGS_PATH
-    deck  = sys.argv[2] if len(sys.argv) >= 3 else DECK_NAME
 
-    try:
-        anki("version")
-    except Exception:
-        print("Error: Can't reach AnkiConnect. Make sure Anki is open.")
+    if not os.path.exists(ANKI_DB_PATH):
+        print(f"Error: Anki database not found at {ANKI_DB_PATH}")
+        print("Check ANKI_DB_PATH in config.py.")
         sys.exit(1)
 
-    submit_ratings(deck, jsonl)
+    submit_ratings(ANKI_DB_PATH, jsonl)

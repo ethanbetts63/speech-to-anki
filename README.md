@@ -10,14 +10,17 @@ This is an admittadly clunky solution but it bridges that gap: export your due c
 
 ## Setup (first time only)
 
-1. Install the AnkiConnect add-on in Anki: Tools > Add-ons > Get Add-ons, enter code `2055492159`.
-2. Restart Anki. Now when anki runs a local server is created on port `8765` that the scripts talk to.
-3. Set up venv:
+1. Set up venv:
     ```
     python -m venv venv
     venv\Scripts\activate
     python -m pip install -r requirements.txt
     ```
+2. Find your Anki collection database and set `ANKI_DB_PATH` in `config.py`:
+    - Windows: `C:\Users\<YourName>\AppData\Roaming\Anki2\<ProfileName>\collection.anki2`
+    - Mac: `~/Library/Application Support/Anki2/<ProfileName>/collection.anki2`
+    - Linux: `~/.local/share/Anki2/<ProfileName>/collection.anki2`
+3. Set `DECK_NAME` in `config.py` to the name of the deck you want to review.
 
 ---
 
@@ -27,7 +30,7 @@ This is an admittadly clunky solution but it bridges that gap: export your due c
 2. Change the `DECK_NAME` value in `config.py` to the name of the deck you want to review.
 3. Activate venv (`venv\Scripts\activate`) and run `python anki_due_cards.py` to generate a due cards txt file in the `daily_cards_outbox` dir.
 4. Paste the contents of that file + the cli prompt (`cli_prompt.md`) into a browser AI with voice mode and do your review.
-5. When done paste the conversation transcript to a CLI AI + the `cli_prompt.md` — cli ai scores each card (1=Again, 3=Good) and writes `ratings.jsonl` to the `ratings_inbox` dir (anki app must be open for this step + make sure cli is open in `speech_to_anki` dir with venv active).
+5. When done paste the conversation transcript to a CLI AI + the `cli_prompt.md` — cli ai scores each card (1=Again, 3=Good) and writes `ratings.jsonl` to the `ratings_inbox` dir and then runs `anki_submit.py` to write ratings directly to your Anki database. **Anki must be closed for this step.** Make sure the CLI is open in the `speech_to_anki` dir with venv active.
 
 ---
 

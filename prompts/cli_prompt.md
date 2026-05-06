@@ -26,7 +26,7 @@ You are helping me review Anki flashcards. Here is the full system:
 4. User pastes the transcript to you
 5. You read it and score each card: `1` = Again (wrong, blanked, needed telling), `3` = Good (correct or mostly correct). Skip cards where the session ended before they answered
 6. You write `ratings.jsonl` to `ratings_inbox/ratings.jsonl` — one line per card (overwrite the file if it already exists, do not append)
-7. Finally you run `anki_submit.py`. If it doesn't work it's likely the user didn't have the anki app open and you should instruct them to do so.
+7. Finally you run `anki_submit.py`. Anki must be **closed** for this to work. If it errors saying the database is not found, tell the user to check `ANKI_DB_PATH` in `config.py`.
 
 **JSONL format:**
 ```
