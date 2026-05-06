@@ -32,7 +32,7 @@ Claude Part:
   4. User pastes the transcript to you
   5. You read it and score each card: 1 = Again (wrong, blanked, needed telling), 3 = Good (correct
    or mostly correct). Skip cards where the session ended before they answered
-  6. You write ratings.jsonl to C:\Users\ethan\coding\auto_anki\ratings.jsonl — one line per card:
+  6. You write ratings.jsonl to C:\Users\ethan\coding\speech_to_anki\ratings_inbox\ratings.jsonl — one line per card (overwrite the file if it already exists, do not append):
   {"card_id": 1234567890, "ease": 3}
   7. Finally you run anki_submit.py if it doesn't work it's likely the user didn't have the anki app open and you should instruct them to do so.
 

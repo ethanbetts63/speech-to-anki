@@ -15,7 +15,7 @@ import os
 import time
 from config import DECK_NAME, ANKI_URL
 
-RATINGS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ratings.jsonl")
+RATINGS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ratings_inbox", "ratings.jsonl")
 
 
 def anki(action, **params):

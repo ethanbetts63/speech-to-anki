@@ -2,6 +2,7 @@ collection_inbox/*
 !collection_inbox/.gitkeep
 daily_cards_outbox/*
 !daily_cards_outbox/.gitkeep
-ratings.jsonl
+ratings_inbox/*
+!ratings_inbox/.gitkeep
 venv/
 __pycache__/
