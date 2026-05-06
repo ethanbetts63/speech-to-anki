@@ -22,7 +22,7 @@ This is an admittedly clunky solution but it bridges that gap: export your due c
 1. Change the `DECK_NAME` value in `config.py` to the name of the deck you want to review.
 2. Close Anki and run `python export_daily_cards.py` to generate a due cards txt file in the `daily_cards_outbox` dir.
 3. Paste the contents of that file + the cli prompt (`cli_prompt.md`) into a browser AI with voice mode and do your review.
-4. When done paste the conversation transcript to a CLI AI + the `cli_prompt.md` — cli ai scores each card (1=Again, 3=Good) and writes `ratings.jsonl` to the `ratings_inbox` dir and then runs `submit_ratings.py` to write ratings directly to your Anki database. **Anki must be closed for this step.** Make sure the CLI is open in the `speech_to_anki` dir.
+4. When done paste the conversation transcript to a CLI AI + the `cli_prompt.md` — cli ai scores each card (1=Again, 3=Good) and writes `ratings.jsonl` to the `ratings_inbox` dir and then runs `submit_ratings.py` to write ratings directly to your Anki database. **Anki must be closed for this step.** 
 
 ---
 
