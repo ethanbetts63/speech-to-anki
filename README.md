@@ -16,14 +16,14 @@ This is an admittadly clunky solution but it bridges that gap: export your due c
     ```
     python -m venv venv
     venv\Scripts\activate
-    pip install -r requirements.txt
+    python -m pip install -r requirements.txt
     ```
 
 ---
 
 ## Workflow
 
-1. Export your Anki collection as `collection.colpkg` (click settings icon on desired deck > export > export format: Anki Collection Package (.colpkg) and support older anki enabled > name file "collection > output to collection_inbox dir)
+1. Export your Anki collection as `collection.colpkg` (click settings icon on desired deck > export > export format: Anki Collection Package (.colpkg) and support older anki enabled > name file `collection` > output to collection_inbox dir)
 2. Change the `DECK_NAME` value in `config.py` to the name of the deck you want to review.
 3. Activate venv (`venv\Scripts\activate`) and run `python anki_due_cards.py` to generate a due cards txt file in the `daily_cards_outbox` dir.
 4. Paste the contents of that file + the cli prompt (`cli_prompt.md`) into a browser AI with voice mode and do your review.
