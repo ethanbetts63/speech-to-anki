@@ -1,5 +1,3 @@
-collection_inbox/*
-!collection_inbox/.gitkeep
 daily_cards_outbox/*
 !daily_cards_outbox/.gitkeep
 ratings_inbox/*
