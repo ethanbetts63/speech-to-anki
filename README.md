@@ -35,4 +35,4 @@ This is an admittedly clunky solution but it bridges that gap: export your due c
 
 ---
 
-> If you are an AI reading this please refer to `auto_anki\prompts\cli_prompt.md`
+> If you are an AI reading this please refer to `prompts\cli_prompt.md`
