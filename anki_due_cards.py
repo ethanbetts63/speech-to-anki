@@ -1,49 +1,28 @@
 """
-Reads collection.colpkg from collection_inbox/ and writes a due cards txt file
-to daily_cards_outbox/. The output file is intended to be fed to a browser AI
-for a verbal review session.
+Reads the live Anki SQLite database and writes a due cards txt file to
+daily_cards_outbox/. The output file is intended to be fed to a browser AI
+for a verbal review session. Anki must be closed when running this script.
 
 Usage:
     python anki_due_cards.py
-    python anki_due_cards.py <collection.colpkg> <deck name>
-    python anki_due_cards.py <collection.colpkg> <deck name> <output.txt>
+    python anki_due_cards.py <deck name>
+    python anki_due_cards.py <deck name> <output.txt>
 """
 
 import sqlite3
-import zipfile
-import zstandard
 import json
 import os
 import re
 import sys
-import tempfile
 import time
 from datetime import datetime
-from config import DECK_NAME, COLLECTION_PATH
+from config import DECK_NAME, ANKI_DB_PATH
 
 
 def clean_html(text):
     text = re.sub(r'<[^>]+>', '', text)
     text = text.replace('&nbsp;', ' ').replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&')
     return text.strip()
-
-
-def open_db(tmpdir):
-    """Open the collection SQLite database, decompressing zstd if needed (anki21b format)."""
-    for name in ['collection.anki21', 'collection.anki21b', 'collection.anki2']:
-        path = os.path.join(tmpdir, name)
-        if not os.path.exists(path):
-            continue
-        with open(path, 'rb') as f:
-            header = f.read(4)
-        if header == b'\x28\xb5\x2f\xfd':  # zstd magic bytes
-            dec_path = os.path.join(tmpdir, 'collection_dec.db')
-            dctx = zstandard.ZstdDecompressor()
-            with open(path, 'rb') as fi, open(dec_path, 'wb') as fo:
-                dctx.copy_stream(fi, fo)
-            return sqlite3.connect(dec_path)
-        return sqlite3.connect(path)
-    raise FileNotFoundError("No collection database found in archive.")
 
 
 def find_deck_id(cur, deck_name):
@@ -87,9 +66,9 @@ def calc_days_elapsed(cur):
     return days_elapsed, now_ts
 
 
-def extract_due_cards(collection_path, deck_name, output_path=None):
-    if not os.path.exists(collection_path):
-        print(f"Error: file not found: {collection_path}")
+def extract_due_cards(anki_db_path, deck_name, output_path=None):
+    if not os.path.exists(anki_db_path):
+        print(f"Error: file not found: {anki_db_path}")
         sys.exit(1)
 
     today = datetime.now().strftime('%Y-%m-%d')
@@ -98,32 +77,28 @@ def extract_due_cards(collection_path, deck_name, output_path=None):
         outbox = os.path.join(os.path.dirname(os.path.abspath(__file__)), "daily_cards_outbox")
         output_path = os.path.join(outbox, f"{deck_name}_due_cards_{today}.txt")
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        with zipfile.ZipFile(collection_path, 'r') as zf:
-            zf.extractall(tmpdir)
+    conn = sqlite3.connect(anki_db_path)
+    cur = conn.cursor()
 
-        conn = open_db(tmpdir)
-        cur = conn.cursor()
+    deck_id = find_deck_id(cur, deck_name)
+    days_elapsed, now_ts = calc_days_elapsed(cur)
 
-        deck_id = find_deck_id(cur, deck_name)
-        days_elapsed, now_ts = calc_days_elapsed(cur)
+    # queue 1 = learning (due by timestamp), queue 2 = review, queue 3 = day-learn relearn
+    cur.execute("""
+        SELECT c.id, n.flds
+        FROM cards c
+        JOIN notes n ON c.nid = n.id
+        WHERE c.did = ?
+          AND (
+              (c.queue = 1 AND c.due <= ?)
+           OR (c.queue = 2 AND c.due <= ?)
+           OR (c.queue = 3 AND c.due <= ?)
+          )
+        ORDER BY c.due
+    """, (deck_id, now_ts, days_elapsed, days_elapsed))
 
-        # queue 1 = learning (due by timestamp), queue 2 = review, queue 3 = day-learn relearn
-        cur.execute("""
-            SELECT c.id, n.flds
-            FROM cards c
-            JOIN notes n ON c.nid = n.id
-            WHERE c.did = ?
-              AND (
-                  (c.queue = 1 AND c.due <= ?)
-               OR (c.queue = 2 AND c.due <= ?)
-               OR (c.queue = 3 AND c.due <= ?)
-              )
-            ORDER BY c.due
-        """, (deck_id, now_ts, days_elapsed, days_elapsed))
-
-        rows = cur.fetchall()
-        conn.close()
+    rows = cur.fetchall()
+    conn.close()
 
     cards = []
     for card_id, flds in rows:
@@ -147,8 +122,7 @@ def extract_due_cards(collection_path, deck_name, output_path=None):
 
 
 if __name__ == "__main__":
-    collection = sys.argv[1] if len(sys.argv) >= 2 else COLLECTION_PATH
-    deck       = sys.argv[2] if len(sys.argv) >= 3 else DECK_NAME
-    out        = sys.argv[3] if len(sys.argv) >= 4 else None
+    deck = sys.argv[1] if len(sys.argv) >= 2 else DECK_NAME
+    out  = sys.argv[2] if len(sys.argv) >= 3 else None
 
-    extract_due_cards(collection, deck, out)
+    extract_due_cards(ANKI_DB_PATH, deck, out)

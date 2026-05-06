@@ -4,7 +4,7 @@ Imagine reviewing Anki by talking/explaining concepts out loud and getting real-
 
 As of writing, no CLI AI offers voice/conversational capabilities — only browser-based versions of Claude and ChatGPT do.
 
-This is an admittadly clunky solution but it bridges that gap: export your due cards to a text file, feed it with a pre-written prompt to your browser AI and do the session verbally, then paste the transcript to your CLI AI to score the cards and write the ratings back into Anki.
+This is an admittedly clunky solution but it bridges that gap: export your due cards to a text file, feed it with a pre-written prompt to your browser AI and do the session verbally, then paste the transcript to your CLI AI to score the cards and write the ratings back into Anki.
 
 ---
 
@@ -20,24 +20,22 @@ This is an admittadly clunky solution but it bridges that gap: export your due c
     - Windows: `C:\Users\<YourName>\AppData\Roaming\Anki2\<ProfileName>\collection.anki2`
     - Mac: `~/Library/Application Support/Anki2/<ProfileName>/collection.anki2`
     - Linux: `~/.local/share/Anki2/<ProfileName>/collection.anki2`
-3. Set `DECK_NAME` in `config.py` to the name of the deck you want to review.
 
 ---
 
 ## Workflow
 
-1. Export your Anki collection as `collection.colpkg` (click settings icon on desired deck > export > export format: Anki Collection Package (.colpkg) and support older anki enabled > name file `collection` > output to collection_inbox dir)
-2. Change the `DECK_NAME` value in `config.py` to the name of the deck you want to review.
-3. Activate venv (`venv\Scripts\activate`) and run `python anki_due_cards.py` to generate a due cards txt file in the `daily_cards_outbox` dir.
-4. Paste the contents of that file + the cli prompt (`cli_prompt.md`) into a browser AI with voice mode and do your review.
-5. When done paste the conversation transcript to a CLI AI + the `cli_prompt.md` — cli ai scores each card (1=Again, 3=Good) and writes `ratings.jsonl` to the `ratings_inbox` dir and then runs `anki_submit.py` to write ratings directly to your Anki database. **Anki must be closed for this step.** Make sure the CLI is open in the `speech_to_anki` dir with venv active.
+1. Change the `DECK_NAME` value in `config.py` to the name of the deck you want to review.
+2. Close Anki, then activate venv (`venv\Scripts\activate`) and run `python anki_due_cards.py` to generate a due cards txt file in the `daily_cards_outbox` dir.
+3. Paste the contents of that file + the cli prompt (`cli_prompt.md`) into a browser AI with voice mode and do your review.
+4. When done paste the conversation transcript to a CLI AI + the `cli_prompt.md` — cli ai scores each card (1=Again, 3=Good) and writes `ratings.jsonl` to the `ratings_inbox` dir and then runs `anki_submit.py` to write ratings directly to your Anki database. **Anki must be closed for this step.** Make sure the CLI is open in the `speech_to_anki` dir with venv active.
 
 ---
 
 ## Scripts
 
 | Script | Description |
-| `anki_due_cards.py` | reads `collection_inbox/collection.colpkg` and outputs a due cards txt file |
+| `anki_due_cards.py` | reads the live Anki database (`ANKI_DB_PATH`) and outputs a due cards txt file |
 | `anki_submit.py` | reads `ratings_inbox/ratings.jsonl` and submits ratings to Anki via AnkiConnect |
 | `anki_review.py` | interactive CLI review directly through AnkiConnect (requires Anki open) |
 
